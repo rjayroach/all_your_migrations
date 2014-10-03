@@ -1,6 +1,37 @@
 # Todo
 
+# change syntax
+```ruby
+# all of the new methods take an object or a string except set and where which just take strings
+# those methods that take an object just append their string to the Migration model's .sql property
+def insert_new_merchant
+  insert_into(self).values(columns).from(A/R query)
+  # insert_into, values and from are methods on Migration
+end
+
+def update_place_code
+  update_into(self).from(A/R query).set(set string).where(where string)
+  # update_into, from, set and where are methods on Migration
+end
+
+on_migrate :insert_new_merchant, :update_place_code
+
+Merchant.migrate!(method :all)
+
+when looping over method array, if method != all then check the name matches
+```
+
 # only require activesupport/concerns
+
+## capture all options in one method name:
+so change 
+```ruby
+last_migrated_id_column = 'legacy_id'
+```
+to
+```ruby
+migrate_with: last_migrated_id_column: 'legacy_id', ignore_legacy_tables: true
+```
 
 ## create a method `since_last_migration`
 this method automatically adds the corrext where clause and must be executed each time (e.g. a Proc)

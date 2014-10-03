@@ -98,20 +98,19 @@ class Merchant < ActiveRecord::Base
 
   # Insert new records created since last import
   def insert_new_merchants
-    migrate(model: self,
-            ar_query: Legacy::Vendor.where('vendor_id > ?', last_migrated_id)
-                                    .select(:vendor_id,
-                                            :create_date,
-                                            :last_updated_date,
-                                            :name,
-                                            'IF(`vendor`.`active` = 1, 4, 5)',
-                                            :vendor_logo,
-                                            "'perx_stamp.png'",
-                                            :uses_amex,
-                                            :amex_issuer_id),
-
-            insert_columns: %i(legacy_id created_at updated_at name state logo stamp uses_amex amex_issuer_code)
-    )
+    insert_into(self).values(:legacy_id,
+                             :created_at,
+                             :updated_at,
+                             :name,
+                             :state,
+                             :logo)
+                     .from(Legacy::Vendor.where('vendor_id > ?', last_migrated_id)
+                                         .select(:vendor_id,
+                                                 :create_date,
+                                                 :last_updated_date,
+                                                 :name,
+                                                 'IF(`vendor`.`active` = 1, 4, 5)',
+                                                 :vendor_logo)
   end
 end
 ```

@@ -57,24 +57,94 @@ config/application.rb:
 config.all_your_migrations.legacy_namespace = Legacy
 ```
 
-* Configure access to the legacy database
-* Model the legacy tables (suggest creating a gem for the legacy models)
+#### Configure access to the legacy database
+```ruby
+legacy:
+  <<: *default
+  database: legacy_db
+  username: <%= ENV["DB_USERNAME"] %>
+  password: <%= ENV["DB_PASSWORD"] %>
+  host: <%= ENV["DB_HOST"] %>
+```
+
+#### Model the legacy tables
+We suggest creating a gem for the legacy models
+
+
 * Create an initializer for this gem (legacy_namespace, legacy_databse, legacy_tables)
 
-* Define the migrations inside the model:
+#### Define the migrations inside the model:
 
-	```ruby
-	class Product < ActiveRecord::Base
-	  on_migrate :insert_from_legacy_products
+Assuming you have two models, Vendor and Merchant. Vendor is the legacy model in the legacy database
 
-          def insert_from_legacy_products
-          end
-	end
-	```
+```ruby
+class Merchant < ActiveRecord::Base
+  include AllYourMigrations::Migratable
+  belongs_to :legacy, class_name: 'Legacy::Vendor'
+  last_migrated_id_column = 'legacy_id'
+  on_migrate :insert_new_merchants
 
-* Create a rake file for the migration
 
-* run the migrations
+  # Insert new records created since last import
+  def insert_new_merchants
+    migrate(model: self,
+            ar_query: Legacy::Vendor.where('vendor_id > ?', last_migrated_id)
+                                    .select(:vendor_id,
+                                            :create_date,
+                                            :last_updated_date,
+                                            :name,
+                                            'IF(`vendor`.`active` = 1, 4, 5)',
+                                            :vendor_logo,
+                                            "'perx_stamp.png'",
+                                            :uses_amex,
+                                            :amex_issuer_id),
+
+            insert_columns: %i(legacy_id created_at updated_at name state logo stamp uses_amex amex_issuer_code)
+    )
+  end
+end
+```
+
+
+### Migrating
+
+#### Sample Migration Rakefile
+To run from cli (for testing or to invoke from capistrano, etc) you can include tasks
+The organization here is something we've refined over several migrations and works well for us
+
+
+```ruby
+def to_boolean(str, default = false)
+  str.nil? ? default : str.eql?('true')
+end
+
+
+namespace :aym do
+  task :migrate do
+    Rake::Task['aym:migrate:merchants'].invoke
+  end
+
+  namespace :migrate do
+    task :initialize => [:environment] do
+      @debug = to_boolean(ENV['debug'], false)
+      @dry_run = to_boolean(ENV['dry_run'], false)
+      @reset = to_boolean(ENV['reset'], false)
+    end
+
+    task :merchants => [:initialize] do
+      Merchant.truncate! if @reset
+      Merchant.migrate!
+    end
+  end
+end
+```
+
+#### Run the Migrations
+
+```bash
+rake aym:migrate:merchants
+rake aym:migrate:merchants reset=true
+```
 
 
 ## Contributing

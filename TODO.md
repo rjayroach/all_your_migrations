@@ -2,16 +2,12 @@
 
 # only require activesupport/concerns
 
-## add option to add specific SQL to the AYM::Migration model
-this means it holds the sql in a property and whenever any of the related properties change it would need to reset its sql property
-test that if i change a setting on the A/R model, e.g. ignore_legacy and then reload! the model that the changes get instantly applied
-  otherwise this would not work as expected
-
 ## create a method `since_last_migration`
 this method automatically adds the corrext where clause and must be executed each time (e.g. a Proc)
 
 ## config initializer for migrations:
 if set legacy_database and table names then apply them to all migrations automatically. can be overriden by the table with a += %w(table)
+get the basic code working in a manner normal for Rails
 
 ## support multiple namespaces for listng models in a specific namespace, e.g. Legacy
 change to array

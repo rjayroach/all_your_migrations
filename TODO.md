@@ -5,7 +5,7 @@
 # all of the new methods take an object or a string except set and where which just take strings
 # those methods that take an object just append their string to the Migration model's .sql property
 def insert_new_merchant
-  insert_into(self).values(columns).from(A/R query)
+  insert_into(self).values(columns).from(A/R query).key_on(:legacy_id).with_legacy_table_map(nil)
   # insert_into, values and from are methods on Migration
 end
 
@@ -14,9 +14,40 @@ def update_place_code
   # update_into, from, set and where are methods on Migration
 end
 
-on_migrate :insert_new_merchant, :update_place_code
+def nuke_and_bang
+  truncate!
+  big_bang
+end
 
-Merchant.migrate!(method :all)
+def big_bang
+  insert_new_merchants!  <-- these methods w/out the ! call insert_into or update_into; those methods can detect the calling funciton and
+  update_place_code!           use meta programming to add the method with a ! which calls migrate! on the Migration object
+                         <-- calling these methods w/out the ! will just return the SQL
+end
+
+def daily
+  update_place_code!
+end
+
+on_migration :big_bang, execute: [:insert_new_merchants!, :update_place_code!]
+on_migration :nuke_and_bang, execute: [:truncate!, :big_bang!] (,before: Merchant, :all || after: Merchant) # if :all then it is first
+^-- this uses meta programming to create the method nuke_and_bang on the model which returns the execute list. it aslo create nuke_and_bang! which runs the migration
+OR it doesn't create these methods, it just looks them up in a hash or array
+
+
+
+rake migrate type=big_bang
+So then we have a standard rake file which:
+1. calls each model's migrations_for( type: :big_bang || method: :method_name )
+2. builds an array in order so it gets done
+3. Global.migrate! <-- calls through the array in order of priority and does it
+
+OR
+
+Merchant.big_bang!
+NextThing.migrate!(:big_bang)
+....
+
 
 when looping over method array, if method != all then check the name matches
 ```

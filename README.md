@@ -92,7 +92,7 @@ Assuming you have two models, Vendor and Merchant. Vendor is the legacy model in
 class Merchant < ActiveRecord::Base
   include AllYourMigrations::Migratable
   belongs_to :legacy, class_name: 'Legacy::Vendor'
-  last_migrated_id_column = 'legacy_id'
+  migrate last_migrated_id_column: 'legacy_id', ignore_legacy_tables: true
   on_migrate :insert_new_merchants
 
 
@@ -111,6 +111,7 @@ class Merchant < ActiveRecord::Base
                                                  :name,
                                                  'IF(`vendor`.`active` = 1, 4, 5)',
                                                  :vendor_logo)
+                     .link_by(:legacy_id)
   end
 end
 ```

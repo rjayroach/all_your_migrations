@@ -2,7 +2,14 @@ module AllYourMigrations
   module Migratable
     extend ActiveSupport::Concern
 
-    # last_migrated_id, legacy_tables, truncate!, insert_into, update_into, on_migrate, migrate!
+    # inherited settings: legacy_tables
+    # chained settings: insert_into, update_into
+    # action settings: on_migrate [], link_by :legacy_id (link_by used to be last_migrated_id_column), also support legacy_tables([])
+    # remove ignore_legacy_tables; if the migration should ignore them just add a .legacy_tables(nil) to the insert_into / update_into chain
+    # note: link_by and ignore_legacy_tables can both be set on each individual query as well
+    # actions: truncate, truncate!, migrate, migrate! (the non-destructive versions return the SQL string that would have run)
+    # helper actions: find_in_column_type
+    # object: last_migrated, first_migrated (maybe - this would be the first object migrated in this batch)
     module ClassMethods
       # NOTE: All these methods are exposed to the A/R model.
       # To keep is simple, consider renaming them so they have similar naming (easier to remember)
@@ -12,14 +19,14 @@ module AllYourMigrations
       end
 
       # todo change to insert_into and update_into
+      # todo then the migrate method is going to process an options hash for ignore_legacy_tables, last_migrated_id_column etc
       def migrate(model: nil, ar_query: nil, insert_columns: nil, update_string: nil, sql: sql, ignore_legacy_tables: false)
         Migration.new(model: model, ar_query: ar_query, insert_columns: insert_columns, sql: sql,
                       update_string: update_string, ignore_legacy_tables: ignore_legacy_tables)
       end
 
-      # change to be like on_migrate: if a param is passed then set @last_migrated_id_column to it
-      # if no param is passed then return the value as this method is doing
-      # then get rid of last_migrated_id_column=
+      # todo add a method last_migrated that returns the last migrated object based on order
+      # todo change this method to use last_migrated and then call #migrate_key on it to get the actual value
       def last_migrated_id
         return nil unless self.last_migrated_id_column
         self.order(self.last_migrated_id_column).last.try(self.last_migrated_id_column.to_sym) || 0
@@ -31,13 +38,15 @@ module AllYourMigrations
         @last_migrated_id_column = column
       end
 
-      # todo make an attr_reader
+      # todo get rid of after migrate method is changed
       def last_migrated_id_column
         @last_migrated_id_column
       end
 
-      def on_migrate(*migrate_methods)
+      def on_migrate(*migrate_methods, link_to: nil, ignore_legacy_tables: nil)
         @migration_methods ||= migrate_methods
+        @link_to = link_to
+        @ignore_legacy_tables = ignore_legacy_tables
       end
 
       # todo make an attr_writer
@@ -69,11 +78,11 @@ module AllYourMigrations
 
 
       # todo clean this up
-      def where_column_type(column_type = 'datetime', value = '2011-10-17')
+      def find_in_column_type(column_type = 'datetime', value = '2011-10-17')
         #%w{ respondent_surveys transactions transaction_profiles workflows campaigns transaction_profiles workflow_tasks }.each do |table|
+        # todo: use arel to do chain each column with an OR to return one result set
         self.columns_hash.select {|k,v| v.sql_type.eql? column_type}.each do |k,v|
-          result = self.where("#{k} like '%#{value}%'")
-          p result.first
+          self.where("#{k} like '%#{value}%'")
         end
       end
     end

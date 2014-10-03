@@ -70,6 +70,17 @@ legacy:
 #### Model the legacy tables
 We suggest creating a gem for the legacy models
 
+```ruby
+module Legacy
+  class Vendor < ActiveRecord::Base
+    establish_connection :legacy
+    self.table_name = "vendor"
+    self.primary_key = "vendor_id"
+    belongs_to :city
+    has_many :vendor_addresses
+  end
+end
+```
 
 * Create an initializer for this gem (legacy_namespace, legacy_databse, legacy_tables)
 

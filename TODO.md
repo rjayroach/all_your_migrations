@@ -13,8 +13,8 @@ this method automatically adds the corrext where clause and must be executed eac
 ## config initializer for migrations:
 if set legacy_database and table names then apply them to all migrations automatically. can be overriden by the table with a += %w(table)
 
-## find a way to list all models in a specific namespace, e.g. Legacy
-this by default becomes the list of tables if it is specified
+## support multiple namespaces for listng models in a specific namespace, e.g. Legacy
+change to array
 
 ## when including the gem, it adds itself to AR::Base so it shows up for all models automatically
 

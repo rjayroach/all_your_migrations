@@ -27,7 +27,6 @@ a sample rails app with a new bd, a legacy db with crazy table names, legacy nam
 
 
 
-
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -45,7 +44,18 @@ Or install it yourself as:
 ## Usage
 
 
+
 ### Additional Steps for a Legacy Database
+
+config/environements/development.rb:
+```ruby
+config.eager_load = true
+```
+
+config/application.rb:
+```ruby
+config.all_your_migrations.legacy_namespace = Legacy
+```
 
 * Configure access to the legacy database
 * Model the legacy tables (suggest creating a gem for the legacy models)

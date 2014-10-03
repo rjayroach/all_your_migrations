@@ -35,25 +35,26 @@ module AllYourMigrations
       ignore_legacy_tables ? sql_base_string : sql_gsub_legacy_database_string
     end
 
+    # todo if a specifc name is passed in (case otherwise) then find it by it's name and run it
     def sql_base_string
-      case type
-      when :insert
-        "insert into #{model.table_name} (#{insert_columns.join(',')}) #{ar_query.to_sql}"
-      when :update
-        sql_string = ar_query.to_sql
-        sql_string = sql_string[sql_string.index(' FROM ') + 6 .. -1]
-        "update #{sql_string} #{update_string}"
-      else
-        # todo if a specifc name is passed in (case otherwise) then find it by it's name and run it
-      end
+      send(type)
+    end
+
+    def insert
+      "insert into #{model.table_name} (#{insert_columns.join(',')}) #{ar_query.to_sql}"
+    end
+
+    def update
+      sql_string = ar_query.to_sql
+      sql_string = sql_string[sql_string.index(' FROM ') + 6 .. -1]
+      "update #{sql_string} #{update_string}"
     end
 
     def sql_gsub_legacy_database_string
-      query_string = sql_base_string
-      model.legacy_tables.each do |table|
-        query_string = query_string.gsub("`#{table}`", "#{model.legacy_database}.#{table}")
+      model.legacy_tables.inject(sql_base_string) do |query_string, element|
+        table, database = element
+        query_string.gsub("`#{table}`", "#{database}.#{table}")
       end
-      query_string
     end
 
     def migrate!

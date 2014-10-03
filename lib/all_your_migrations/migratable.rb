@@ -38,21 +38,22 @@ module AllYourMigrations
         @migration_queries
       end
 
-      def legacy_database=(database)
-        @legacy_database = database
-      end
-
-      def legacy_database
-        @legacy_database ||= nil
-      end
-
       # todo get table names automagically: Legacy.constants.map {|c| Legacy.const_get(c).class}
       def legacy_tables=(tables)
         @legacy_tables = tables
       end
 
+      # todo set the tables in the engine initializer and then just get it here using same technique
+      # todo make that config setting an array of namespaces and iterate over all of them
       def legacy_tables
-        @legacy_tables ||= []
+        @legacy_tables ||=
+          if Rails.application.config.respond_to? :all_your_migrations_legacy_namespace 
+            mod = Rails.application.config.all_your_migrations_legacy_namespace
+            ar_classes = mod.constants.select {|c| mod.const_get(c).is_a? Class}.select {|c| mod.const_get(c) < ActiveRecord::Base}
+            ar_classes.collect {|c| [ mod.const_get(c).table_name, mod.const_get(c).connection_config[:database] ]}
+          else
+            []
+          end
       end
 
       #start_at = Time.now #STDOUT.puts "---- Begin at: #{Time.now}\n#{sql_string}\n" if @debug

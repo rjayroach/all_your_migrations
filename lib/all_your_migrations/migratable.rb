@@ -10,12 +10,18 @@ module AllYourMigrations
         self
       end
 
+      def migrate(model: nil, ar_query: nil, insert_columns: nil, update_string: nil, sql: sql, ignore_legacy_tables: false)
+        Migration.new(model: model, ar_query: ar_query, insert_columns: insert_columns, sql: sql,
+                      update_string: update_string, ignore_legacy_tables: ignore_legacy_tables)
+      end
+
       def last_migrated_id
         return nil unless self.last_migrated_id_column
         self.order(self.last_migrated_id_column).last.try(self.last_migrated_id_column.to_sym) || 0
       end
 
       def last_migrated_id_column=(column)
+        # todo throw invalid column exception
         return nil unless self.columns_hash.keys.include? column
         @last_migrated_id_column = column
       end
@@ -25,17 +31,16 @@ module AllYourMigrations
       end
 
       def on_migrate(*migrate_methods)
-        migrate_methods.each { |m_method| add_migration send(m_method) }
+        migrate_methods.each { |migration_method| add_migration migration_method }
       end
 
-      def add_migration(migration)
-        @migration_queries ||= []
-        @migration_queries.append migration
+      def add_migration(migration_method)
+        @migration_methods ||= []
+        @migration_methods.append migration_method
       end
 
-      # todo support query_type
-      def migrations(query_type = :all)
-        @migration_queries
+      def migrations
+        @migration_methods
       end
 
       # todo get table names automagically: Legacy.constants.map {|c| Legacy.const_get(c).class}
@@ -50,7 +55,7 @@ module AllYourMigrations
           if Rails.application.config.respond_to? :all_your_migrations_legacy_namespace 
             mod = Rails.application.config.all_your_migrations_legacy_namespace
             ar_classes = mod.constants.select {|c| mod.const_get(c).is_a? Class}.select {|c| mod.const_get(c) < ActiveRecord::Base}
-            ar_classes.collect {|c| [ mod.const_get(c).table_name, mod.const_get(c).connection_config[:database] ]}
+            ar_classes.collect {|c| modi = mod.const_get(c); [modi.table_name, modi.connection_config[:database] ]}
           else
             []
           end
@@ -59,9 +64,10 @@ module AllYourMigrations
       #start_at = Time.now #STDOUT.puts "---- Begin at: #{Time.now}\n#{sql_string}\n" if @debug
       #end_at = Time.now #STDOUT.puts "---- End at: #{Time.now}\n" if @debug
       #[start_at, end_at]
+      # todo support query_type
       def migrate!(query_type = :all)
-        self.migrations(query_type).each do |migration|
-          migration.migrate!
+        self.migrations.each do |migration_method|
+          send(migration_method).migrate!
         end
         self
       end

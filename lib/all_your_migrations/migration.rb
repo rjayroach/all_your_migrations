@@ -1,41 +1,54 @@
 module AllYourMigrations
   class Migration
-    attr_accessor :name, :model, :ar_query, :ignore_legacy_tables
-    attr_reader :insert_columns, :update_string, :type
+    attr_accessor :model, :ar_query, :name, :type, :sql, :ignore_legacy_tables
+    attr_reader :insert_columns, :update_string
+      
 
-    def initialize(model: nil, ar_query: nil, insert_columns: nil, update_string: nil, ignore_legacy_tables: false)
+    def initialize(model: nil, ar_query: nil, insert_columns: nil, update_string: nil, sql: nil, ignore_legacy_tables: false)
       # name is the method_name that instantiated this object
       # can be used to call the specific migration using  migrate!(name)
       self.model = model
-      self.name = caller_locations(2,1)[0].label.to_sym
       self.ar_query = ar_query
       self.insert_columns = insert_columns
       self.update_string = update_string
       self.ignore_legacy_tables = ignore_legacy_tables
+      self.sql = sql
+      self.name = caller_locations(2,1)[0].label.to_sym
     end
 
-    #m.insert_into_columns = Array of columns
+    # Array of columns that will be populated from the ar_query
     def insert_columns=(columns)
-      @type = :insert unless columns.nil?
+      self.type = :insert unless columns.nil?
       @insert_columns = columns
     end
 
     #m.update_columns = String of "set a = b"
     def update_string=(string)
-      @type = :update unless string.nil?
+      self.type = :update unless string.nil?
       @update_string = string
     end
 
-    #m.type = :insert or :update (inferred from which of two above is set)
-    def type=(type)
-      @type = type
-    end
-
     def to_sql
-      ignore_legacy_tables ? sql_base_string : sql_gsub_legacy_database_string
+      self.sql || build_sql
     end
 
-    # todo if a specifc name is passed in (case otherwise) then find it by it's name and run it
+    def migrate!
+      ActiveRecord::Base.connection.execute(to_sql)
+      self
+    end
+
+
+    private
+
+    def build_sql
+      return sql_base_string if ignore_legacy_tables
+      model.legacy_tables.inject(sql_base_string) do |query_string, element|
+        table, database = element
+        query_string.gsub("`#{table}`", "#{database}.#{table}")
+      end
+    end
+
+    # todo handle types other than 'insert' and 'update'
     def sql_base_string
       send(type)
     end
@@ -50,17 +63,6 @@ module AllYourMigrations
       "update #{sql_string} #{update_string}"
     end
 
-    def sql_gsub_legacy_database_string
-      model.legacy_tables.inject(sql_base_string) do |query_string, element|
-        table, database = element
-        query_string.gsub("`#{table}`", "#{database}.#{table}")
-      end
-    end
-
-    def migrate!
-      ActiveRecord::Base.connection.execute(to_sql)
-      self
-    end
   end
 end
 

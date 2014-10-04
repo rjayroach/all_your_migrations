@@ -88,12 +88,24 @@ end
 
 Assuming you have two models, Vendor and Merchant. Vendor is the legacy model in the legacy database
 
+NextThing.migrations(:big_bang).execute!
+
 ```ruby
 class Merchant < ActiveRecord::Base
   include AllYourMigrations::Migratable
   belongs_to :legacy, class_name: 'Legacy::Vendor'
-  migrate last_migrated_id_column: 'legacy_id', ignore_legacy_tables: true
-  on_migrate :insert_new_merchants
+  migration_option_key: :legacy_id
+  belongs_to_migration :big_bang, actions: [:insert_new_merchants]
+
+def insert_new_merchant
+  insert_into(self).values(columns).from(A/R query).key_on(:legacy_id).with_legacy_table_map(nil)
+  # insert_into, values and from are methods on Migration
+end
+
+def update_place_code
+  update_into(self).from(A/R query).set(set string).where(where string)
+  # update_into, from, set and where are methods on Migration
+end
 
 
   # Insert new records created since last import

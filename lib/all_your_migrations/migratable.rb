@@ -2,6 +2,9 @@ module AllYourMigrations
   module Migratable
     extend ActiveSupport::Concern
 
+      #start_at = Time.now #STDOUT.puts "---- Begin at: #{Time.now}\n#{sql_string}\n" if @debug
+      #end_at = Time.now #STDOUT.puts "---- End at: #{Time.now}\n" if @debug
+      #[start_at, end_at]
     # inherited settings: legacy_tables
     # chained settings: insert_into, update_into
     # action settings: on_migrate [], link_by :legacy_id (link_by used to be last_migrated_id_column), also support legacy_tables([])
@@ -11,71 +14,52 @@ module AllYourMigrations
     # helper actions: find_in_column_type
     # object: last_migrated, first_migrated (maybe - this would be the first object migrated in this batch)
     module ClassMethods
-      # NOTE: All these methods are exposed to the A/R model.
-      # To keep is simple, consider renaming them so they have similar naming (easier to remember)
-      def truncate!
-        ActiveRecord::Base.connection.execute("truncate table #{self.table_name}")
-        self
+      def migrate_option_key=(key)
+        raise(ArgumentError, ":key must be a valid column") unless self.columns_hash.keys.include? key.to_s
+        migration_options.key = key.to_sym
+      end
+      
+      def migrate_option_legacy_tables=(legacy_tables) # todo throw invalid exception if not array
+        migration_options.legacy_tables = legacy_tables
       end
 
-      # todo change to insert_into and update_into
-      # todo then the migrate method is going to process an options hash for ignore_legacy_tables, last_migrated_id_column etc
-      def migrate(model: nil, ar_query: nil, insert_columns: nil, update_string: nil, sql: sql, ignore_legacy_tables: false)
-        Migration.new(model: model, ar_query: ar_query, insert_columns: insert_columns, sql: sql,
-                      update_string: update_string, ignore_legacy_tables: ignore_legacy_tables)
+      def migration_options
+        @migration_options ||= MigrationOptions.new
       end
 
-      # todo add a method last_migrated that returns the last migrated object based on order
-      # todo change this method to use last_migrated and then call #migrate_key on it to get the actual value
+      def insert_into(model)
+        new_action(model, :insert)
+      end
+
+      def update_into(model)
+        new_action(model, :update)
+      end
+
+      def new_action(model, type)
+        Action.new(model: model, type: type)
+      end
+
+      def belongs_to_migration(name, actions: [], before: nil, after: nil)
+        migrations.append Migration.new(self, name: name, actions: [actions].flatten, before: before, after: after)
+      end
+
+      def migrations(query_type = :all)
+        @migrations ||= []
+        query_type.eql?(:all) ? @migrations : @migrations.select {|m| m.name.eql? query_type}
+      end
+
+      def migrated
+        self.where("#{migration_options.key.to_s} is not null").order(migration_options.key)
+      end
+
       def last_migrated_id
-        return nil unless self.last_migrated_id_column
-        self.order(self.last_migrated_id_column).last.try(self.last_migrated_id_column.to_sym) || 0
+        return nil if migration_options.key.nil?
+        migrated.last.try(migration_options.key) || 0
       end
 
-      def last_migrated_id_column=(column)
-        # todo throw invalid column exception
-        return nil unless self.columns_hash.keys.include? column
-        @last_migrated_id_column = column
+      def truncate
+        new_action(self, :truncate)
       end
-
-      # todo get rid of after migrate method is changed
-      def last_migrated_id_column
-        @last_migrated_id_column
-      end
-
-      def on_migrate(*migrate_methods, link_to: nil, ignore_legacy_tables: nil)
-        @migration_methods ||= migrate_methods
-        @link_to = link_to
-        @ignore_legacy_tables = ignore_legacy_tables
-      end
-
-      # todo make an attr_writer
-      def legacy_tables=(tables)
-        @legacy_tables = tables
-      end
-
-      # todo set the tables in the engine initializer and then just get it here using same technique
-      # todo make that config setting an array of namespaces and iterate over all of them
-      def legacy_tables
-        @legacy_tables ||=
-          if Rails.application.config.respond_to? :all_your_migrations_legacy_namespace 
-            mod = Rails.application.config.all_your_migrations_legacy_namespace
-            ar_classes = mod.constants.select {|c| mod.const_get(c).is_a? Class}.select {|c| mod.const_get(c) < ActiveRecord::Base}
-            ar_classes.collect {|c| modi = mod.const_get(c); [modi.table_name, modi.connection_config[:database] ]}
-          else
-            []
-          end
-      end
-
-      #start_at = Time.now #STDOUT.puts "---- Begin at: #{Time.now}\n#{sql_string}\n" if @debug
-      #end_at = Time.now #STDOUT.puts "---- End at: #{Time.now}\n" if @debug
-      #[start_at, end_at]
-      def migrate!(query_type = :all)
-        migrations_to_run = on_migrate #query_type.eql? :all ? on_migrate : on_migrate.select {|method| method.eql? query_type }
-        migrations_to_run.each { |migration| send(migration).migrate! }
-        self
-      end
-
 
       # todo clean this up
       def find_in_column_type(column_type = 'datetime', value = '2011-10-17')

@@ -8,7 +8,7 @@ module AllYourMigrations
     end
 
     def legacy_tables
-      @legacy_tables ||= Rails.application.config.all_your_migrations_legacy_tables
+      @legacy_tables ||= Rails.application.config.all_your_migrations_legacy_tables if defined?(Rails)
     end
   end
 end

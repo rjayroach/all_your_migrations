@@ -35,6 +35,10 @@ module AllYourMigrations
         new_action(model, :update)
       end
 
+      def truncate
+        new_action(self, :truncate)
+      end
+
       def new_action(model, type)
         Action.new(model: model, type: type)
       end
@@ -55,10 +59,6 @@ module AllYourMigrations
       def last_migrated_id
         return nil if migration_options.key.nil?
         migrated.last.try(migration_options.key) || 0
-      end
-
-      def truncate
-        new_action(self, :truncate)
       end
 
       # todo clean this up

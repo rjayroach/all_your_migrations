@@ -85,7 +85,12 @@ module AllYourMigrations
     end
 
     def truncate
-      "truncate table #{@model.table_name}"
+      case @model.connection_config[:adapter]
+      when 'mysql2'
+        "truncate table #{@model.table_name}"
+      when 'sqlite3'
+        "delete from #{@model.table_name}"
+      end
     end
 
     def from_string

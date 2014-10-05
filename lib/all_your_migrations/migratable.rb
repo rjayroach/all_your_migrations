@@ -19,7 +19,8 @@ module AllYourMigrations
         migration_options.key = key.to_sym
       end
       
-      def migrate_option_legacy_tables=(legacy_tables) # todo throw invalid exception if not array
+      def migrate_option_legacy_tables=(legacy_tables)
+        raise(ArgumentError, ":legacy_tables must be an Array") unless legacy_tables.class.eql? Array
         migration_options.legacy_tables = legacy_tables
       end
 
@@ -35,8 +36,8 @@ module AllYourMigrations
         new_action(model, :update)
       end
 
-      def truncate
-        new_action(self, :truncate)
+      def truncate(model = self)
+        new_action(model, :truncate)
       end
 
       def new_action(model, type)

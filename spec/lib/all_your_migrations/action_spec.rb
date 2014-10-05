@@ -18,7 +18,7 @@ module AllYourMigrations
       class Person < ActiveRecord::Base
         include Migratable
         def self.remove_people
-          truncate
+          truncate(self)
         end
         def self.insert_new_people
           insert_into(self).values(:name)

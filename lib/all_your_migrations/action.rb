@@ -42,7 +42,8 @@ module AllYourMigrations
       self
     end
 
-    def legacy_tables(tables) # todo throw argument error if not tables.class < Array
+    def legacy_tables(tables)
+        raise(ArgumentError, ":tables must be an Array") unless tables.class.eql? Array
       @legacy_tables = tables
       self
     end
@@ -65,10 +66,8 @@ module AllYourMigrations
 
     def build_sql
       return sql_base_string if @legacy_tables.nil? or @legacy_tables.empty?
-      # todo table,database should be gotten from code which sits in the same class as the code that generates the array
-      @legacy_tables.inject(sql_base_string) do |query_string, element|
-        table, database = element
-        query_string.gsub("`#{table}`", "#{database}.#{table}")
+      @legacy_tables.inject(sql_base_string) do |query_string, table|
+        query_string.gsub("`#{table.table_name}`", "#{table.database}.#{table.table_name}")
       end
     end
 
@@ -77,19 +76,31 @@ module AllYourMigrations
     end
 
     def insert
-      "insert into #{@model.table_name} (#{@values.join(',')}) #{@from.to_sql}"
+      "INSERT INTO #{@model.table_name} (#{@values.join(',')}) #{@from.to_sql}"
     end
 
     def update
-      "update #{from_string}#{set_string}#{where_string}"
+      case @model.connection_config[:adapter]
+      when 'mysql2'
+        "UPDATE #{from_string}#{set_string}#{where_string}"
+      when 'sqlite3'
+"replace into #{@model.table_name}
+(rowid,name)
+#{@from.to_sql}"
+#replace into table2
+#(rowid,a, b, c, d, e, f, g)
+#select dest.rowid,src.a, src.b, src.c, src.d, src.e, dest.f, dest.g
+#from table1 src
+#inner join table2 dest on src.f = dest.f
+      end
     end
 
     def truncate
       case @model.connection_config[:adapter]
       when 'mysql2'
-        "truncate table #{@model.table_name}"
+        "TRUNCATE TABLE #{@model.table_name}"
       when 'sqlite3'
-        "delete from #{@model.table_name}"
+        "DELETE FROM #{@model.table_name}"
       end
     end
 
@@ -98,11 +109,11 @@ module AllYourMigrations
     end
 
     def set_string
-      @set.empty? ? '' : " set #{@set.join(', ')}"
+      @set.empty? ? '' : " SET #{@set.join(', ')}"
     end
 
     def where_string
-      (@where.nil? or @where.blank?) ? '' : " where #{@where}"
+      (@where.nil? or @where.blank?) ? '' : " WHERE #{@where}"
     end
 
   end

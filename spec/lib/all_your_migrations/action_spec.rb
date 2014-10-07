@@ -1,60 +1,72 @@
-require 'active_support'
-require 'active_record'
+require 'spec_helper'
+#require 'pry'
 
-require_relative '../../../lib/all_your_migrations/action'
-require_relative '../../../lib/all_your_migrations/migratable'
-require_relative '../../../lib/all_your_migrations/migration'
-require_relative '../../../lib/all_your_migrations/migration_options'
-p ActiveRecord::VERSION::STRING
+def execute_sql(action)
+  action.execute.gsub(/\"/, '')
+end
 
 module AllYourMigrations
   describe Action do
-    before :each do
-      ActiveRecord::Base.establish_connection adapter: 'sqlite3', database: ':memory:'
-      ActiveRecord::Base.connection.instance_eval do
-        create_table(:people) { |t| t.string :name }
-      end
 
-      class Person < ActiveRecord::Base
-        include Migratable
-        def self.remove_people
-          truncate(self)
+    context 'insert' do
+      describe '#execute' do
+        it 'returns the correct SQL' do
+          a = Action.new(model: Person, type: :insert)
+          a.values(:name)
+          a.from(Person.all.select(:name))
+          expect(execute_sql(a)).to eq('INSERT INTO people (name) SELECT people.name FROM people')
         end
-        def self.insert_new_people
-          insert_into(self).values(:name)
-                           .from(Person.all
-                                       .select(:name))
-        end
-        migrate_option_key = :legacy_id
-        belongs_to_migration :daily, actions: [:insert_new_people]
       end
-
-      @person = Person.create! name: 'Aaron'
     end
 
-    it 'has an id' do
-      expect(@person.id).to eq 1
+    context 'update' do
+      describe '#execute' do
+        before :example do
+          @action = Action.new(model: Person, type: :update)
+          @action.from(Vendor.joins(:person).where(person: {active: true}).select(:name)) #.set('name = "vendors"."name"')
+          @action.from(Vendor.joins(:person).select(:id, :name)) #.set('name = "vendors"."name"')
+        end
+
+        it 'returns the correct SQL' do
+          expect(execute_sql(@action)).to eq('UPDATE people INNER JOIN vendors ON vendors.person_id = people.id SET name = vendor.name WHERE active = true')
+        end
+
+        it 'executes the correct SQL' do
+          #@action.from(Person.joins(:vendor)) #.set('name = vendor.name')
+          #binding.pry
+          STDOUT.puts @action.execute
+          @action.execute!
+          expect(@person.name).to eq 'Vendor!'
+          expect(@person2.name).to eq 'Fred'
+        end
+      end
     end
 
-    it 'adds a migration' do
-      pending 'fails'
-      expect(Person.migrations.size).to eq 1
+    context 'truncate' do
+      describe '#execute' do
+        it 'removes all records from the table' do
+          #expect { Person.remove_people.execute! }.to change{Person.count}.by(-1)
+          Person.remove_people.execute!
+          expect(Person.count).to eq 0
+        end
+      end
     end
 
-    it 'migrates a new person' do
-      expect(Person.count).to eq 1
-      #Person.send(Person.migrations.first.actions.last).execute!
-      Person.insert_new_people.execute!
-      expect(Person.count).to eq 2
-    end
-
+=begin
     describe '#truncate' do
-      it 'removes all records from the table' do
+      it 'adds a migration' do
+        pending 'fails'
+        expect(Person.migrations.size).to eq 1
+      end
+
+      it 'migrates a new person' do
+        pending 'move to migratable_spec.rb'
         expect(Person.count).to eq 1
-        Person.remove_people.execute!
-        expect(Person.count).to eq 0
+        Person.insert_new_people.execute!
+        expect(Person.count).to eq 2
       end
     end
+=end
   end
 end
 

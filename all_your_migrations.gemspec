@@ -7,11 +7,11 @@ require "all_your_migrations/version"
 Gem::Specification.new do |s|
   s.name        = "all_your_migrations"
   s.version     = AllYourMigrations::VERSION
-  spec.authors       = ["Robert Roach"]
-  spec.email         = ["rjayroach@gmail.com"]
-  spec.summary       = %q{Tools to support data migrations from legacy databases}
-  #spec.description   = %q{TODO: Write a longer description. Optional.}
-  spec.homepage      = ""
+  s.authors       = ["Robert Roach"]
+  s.email         = ["rjayroach@gmail.com"]
+  s.summary       = %q{Tools to support data migrations from legacy databases}
+  #s.description   = %q{TODO: Write a longer description. Optional.}
+  s.homepage      = ""
   s.license     = "MIT"
 
   s.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]
@@ -19,6 +19,6 @@ Gem::Specification.new do |s|
   s.add_dependency "rails", "~> 4.1.6"
 
   s.add_development_dependency "sqlite3"
-  spec.add_development_dependency "rspec-rails"
-  spec.add_development_dependency "pry"
+  s.add_development_dependency "rspec-rails"
+  s.add_development_dependency "pry"
 end

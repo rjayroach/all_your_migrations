@@ -54,7 +54,7 @@ config.eager_load = true
 
 config/application.rb:
 ```ruby
-config.all_your_migrations.legacy_namespace = Legacy
+config.all_your_migrations_legacy_namespace = Legacy
 ```
 
 #### Configure access to the legacy database

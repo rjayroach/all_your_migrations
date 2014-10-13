@@ -82,7 +82,8 @@ module AllYourMigrations
     def update
       case @model.connection_config[:adapter]
       when 'mysql2'
-        "UPDATE #{from_string}#{set_string}#{where_string}"
+        ns = "UPDATE #{from_string}"
+        ns.insert(ns.index(' WHERE '), set_string)
       when 'sqlite3'
 "replace into #{@model.table_name}
 (rowid,name)

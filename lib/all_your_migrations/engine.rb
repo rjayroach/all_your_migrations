@@ -9,6 +9,12 @@ module AllYourMigrations
         else
           []
         end
+      #STDOUT.puts '$' * 50
+      #STDOUT.puts Rails.application.config.all_your_migrations_legacy_namespace
+      #STDOUT.puts Rails.application.config.autoload_paths
+      #STDOUT.puts  Rails.application.config.respond_to? :all_your_migrations_legacy_namespace 
+      #STDOUT.puts Rails.application.config.all_your_migrations_legacy_tables
+      #STDOUT.puts '$' * 50
     end
   end
 end

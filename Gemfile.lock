@@ -47,10 +47,13 @@ GEM
     mime-types (2.3)
     minitest (5.4.2)
     multi_json (1.10.1)
+    mysql2 (0.3.16)
     pry (0.10.1)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
+    pry-rails (0.3.2)
+      pry (>= 0.9.10)
     rack (1.5.2)
     rack-test (0.6.2)
       rack (>= 1.0)
@@ -108,6 +111,7 @@ PLATFORMS
 
 DEPENDENCIES
   all_your_migrations!
-  pry
+  mysql2
+  pry-rails
   rspec-rails
   sqlite3

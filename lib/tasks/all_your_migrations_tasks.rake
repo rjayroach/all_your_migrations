@@ -7,19 +7,23 @@ namespace :aym do
   task :initialize => [:environment] do
     @debug = to_boolean(ENV['debug'], false)
     @dry_run = to_boolean(ENV['dry_run'], false)
-    @reset = to_boolean(ENV['reset'], false)
-    @migration = ENV['migration']
+    #@reset = to_boolean(ENV['reset'], false)
+    @migration = ENV['migration'].try(:to_sym)
   end
 
-  task :execute => [:initialize] do
-    # todo don't use mod; just check all loaded classes
-    mod = Legacy
-    # todo shoudl be a class of AYM::Migratable
-    ar_classes = mod.constants.select {|c| mod.const_get(c).is_a? Class}.select {|c| mod.const_get(c) < ActiveRecord::Base}
-    tables = ar_classes.collect {|c| mod.const_get(c).table_name }
-    # todo implement before and after in the Object and leverage it here
-    tables.each do |table|
-      eval(table).migrations(@migration).each {|migration| migration.execute! }
+  desc 'Run a legacy AYM migration'
+  task :run => [:initialize] do
+    next unless @migration
+    Merchant.first # todo this is a problem
+    ActiveRecord::Base.descendants.each do |model|
+      next unless model.respond_to? :migrations
+      # todo implement before and after in the Object and leverage it here
+      model.migrations.select {|migration| migration.name.eql? @migration}.each do |migration|
+        STDOUT.puts "\n---- #{model.table_name} #{migration.name} began at: #{Time.now}" if @debug
+        migration.execute.each {|action| STDOUT.puts "#{action}\n\n" } if @debug
+        migration.execute! unless @dry_run
+        STDOUT.puts "---- Finished at: #{Time.now}\n\n" if @debug
+      end
     end
   end
 end

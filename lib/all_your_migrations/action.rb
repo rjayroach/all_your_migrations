@@ -43,7 +43,7 @@ module AllYourMigrations
     end
 
     def legacy_tables(tables)
-        raise(ArgumentError, ":tables must be an Array") unless tables.class.eql? Array
+      raise(ArgumentError, ":tables must be an Array") unless tables.class.eql? Array
       @legacy_tables = tables
       self
     end
@@ -85,14 +85,13 @@ module AllYourMigrations
         ns = "UPDATE #{from_string}"
         ns.insert(ns.index(' WHERE '), set_string)
       when 'sqlite3'
-"replace into #{@model.table_name}
-(rowid,name)
-#{@from.to_sql}"
-#replace into table2
-#(rowid,a, b, c, d, e, f, g)
-#select dest.rowid,src.a, src.b, src.c, src.d, src.e, dest.f, dest.g
-#from table1 src
-#inner join table2 dest on src.f = dest.f
+        # todo this doesn't work at all
+        "REPLACE INTO #{@model.table_name} (rowid,name) #{@from.to_sql}"
+        #replace into table2
+        #(rowid,a, b, c, d, e, f, g)
+        #select dest.rowid,src.a, src.b, src.c, src.d, src.e, dest.f, dest.g
+        #from table1 src
+        #inner join table2 dest on src.f = dest.f
       end
     end
 

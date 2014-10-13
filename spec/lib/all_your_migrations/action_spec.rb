@@ -1,5 +1,4 @@
 require 'rails_helper'
-require 'pry'
 
 def execute_sql(action)
   action.execute.gsub(/\"/, '').gsub(/`/, '')
@@ -57,33 +56,26 @@ module AllYourMigrations
 
     context 'truncate' do
       describe '#execute' do
+        it 'returns the correct SQL' do
+          action = Action.new(model: Merchant, type: :truncate)
+          expect(action.execute).to eq 'TRUNCATE TABLE merchants'
+        end
         it 'removes all records from the table' do
-          #expect { Person.remove_people.execute! }.to change{Person.count}.by(-1)
-          #Person.remove_people.execute!
-          #expect(Person.count).to eq 0
+          action = Action.new(model: Merchant, type: :truncate)
+          action.execute!
+          expect(Merchant.count).to eq 0
+          action = Action.new(model: Merchant, type: :insert)
+          action.values(:legacy_id, :name)
+          action.from(Legacy::Vendor.all.select(:vendor_id, :name))
+          action.execute!
+          expect(Merchant.count).to eq 902
+          action = Action.new(model: Merchant, type: :truncate)
+          action.execute!
+          expect(Merchant.count).to eq 0
         end
       end
     end
 
-=begin
-    describe '#truncate' do
-      it 'adds a migration' do
-        pending 'fails'
-        expect(Person.migrations.size).to eq 1
-      end
-
-      it 'migrates a new person' do
-        pending 'move to migratable_spec.rb'
-        expect(Person.count).to eq 1
-        Person.insert_new_people.execute!
-        expect(Person.count).to eq 2
-      end
-    end
-=end
   end
 end
-
-
-
-
 

@@ -22,15 +22,6 @@ change to array
 
 ## migrate! method has ability to remove and rebuild indexes after migration has run
 
-## create a rake task that executes the migrations
-reset, dry_run, verbose, etc: whether to drop etc
-
-big bang:
-ReportSurvey.truncate! if @reset
-ReportSurvey.migrate!
-
-daily:
-ReportSurvey.migrate!
 
 ## Re-work original big bang rake task on legacy for merchants and other stuff to see how well it works
        sanitize: an array of SQL strings to run to fix up a table

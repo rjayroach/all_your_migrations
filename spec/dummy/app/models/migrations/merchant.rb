@@ -44,7 +44,8 @@ module Migrations
       base.belongs_to :legacy, class_name: 'Legacy::Vendor'
       base.migrate_option_key = :legacy_id
       #base.migrate_option_legacy_tables = nil
-      base.belongs_to_migration :nuke_and_bang, actions: [:truncate, :big_bang], before: Merchant, after: Merchant
+      #base.belongs_to_migration :nuke_and_bang, actions: [:truncate, :big_bang], before: Merchant, after: Merchant
+      base.belongs_to_migration :nuke_and_bang, actions: [:truncate, :insert_new_merchants], before: Merchant, after: Merchant
       base.belongs_to_migration :big_bang, actions: [:insert_new_merchants], before: Merchant, after: Merchant
       base.belongs_to_migration :daily, actions: [:insert_new_merchants], before: Merchant, after: Merchant
     end

@@ -2,9 +2,6 @@ module AllYourMigrations
   module Migratable
     extend ActiveSupport::Concern
 
-      #start_at = Time.now #STDOUT.puts "---- Begin at: #{Time.now}\n#{sql_string}\n" if @debug
-      #end_at = Time.now #STDOUT.puts "---- End at: #{Time.now}\n" if @debug
-      #[start_at, end_at]
     # inherited settings: legacy_tables
     # chained settings: insert_into, update_into
     # action settings: on_migrate [], link_by :legacy_id (link_by used to be last_migrated_id_column), also support legacy_tables([])

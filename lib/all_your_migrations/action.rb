@@ -53,12 +53,12 @@ module AllYourMigrations
       self
     end
 
-    def execute
+    def to_sql
       @sql || build_sql
     end
 
     def execute!
-      ActiveRecord::Base.connection.execute(execute)
+      ActiveRecord::Base.connection.execute(to_sql)
     end
 
 

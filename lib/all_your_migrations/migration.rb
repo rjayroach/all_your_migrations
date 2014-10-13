@@ -10,7 +10,7 @@ module AllYourMigrations
       self.after = after
     end
 
-    def execute(invoke: :execute)
+    def to_sql(invoke: :to_sql)
       actions.inject([]) do |result, action|
         if @model.respond_to?(action)
           result.append @model.send(action).send(invoke)
@@ -20,8 +20,8 @@ module AllYourMigrations
       end
     end
 
-    def execute!
-      execute(invoke: :execute!)
+    def run!
+      to_sql(invoke: :execute!)
     end
 
   end

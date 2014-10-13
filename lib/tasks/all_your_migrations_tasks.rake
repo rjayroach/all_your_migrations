@@ -15,14 +15,13 @@ namespace :aym do
   task :run => [:initialize] do
     next unless @migration
     Merchant.first # todo this is a problem
-    ActiveRecord::Base.descendants.each do |model|
-      next unless model.respond_to? :migrations
+    ActiveRecord::Base.descendants.select {|model| model.respond_to? :migrations}.each do |model|
       # todo implement before and after in the Object and leverage it here
-      model.migrations.select {|migration| migration.name.eql? @migration}.each do |migration|
-        STDOUT.puts "\n---- #{model.table_name} #{migration.name} began at: #{Time.now}" if @debug
-        migration.execute.each {|action| STDOUT.puts "#{action}\n\n" } if @debug
-        migration.execute! unless @dry_run
-        STDOUT.puts "---- Finished at: #{Time.now}\n\n" if @debug
+      model.migrations(@migration).each do |migration|
+        STDOUT.puts "\n-- #{Time.now} begin #{model.table_name} #{migration.name}" if @debug
+        migration.to_sql.each {|sql| STDOUT.puts "#{sql}\n\n" } if @debug
+        migration.run! unless @dry_run
+        STDOUT.puts "-- #{Time.now} finished\n\n" if @debug
       end
     end
   end

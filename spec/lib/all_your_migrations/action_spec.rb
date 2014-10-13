@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 def execute_sql(action)
-  action.execute.gsub(/\"/, '').gsub(/`/, '')
+  action.to_sql.gsub(/\"/, '').gsub(/`/, '')
 end
 
 module AllYourMigrations
@@ -58,7 +58,7 @@ module AllYourMigrations
       describe '#execute' do
         it 'returns the correct SQL' do
           action = Action.new(model: Merchant, type: :truncate)
-          expect(action.execute).to eq 'TRUNCATE TABLE merchants'
+          expect(execute_sql(action)).to eq 'TRUNCATE TABLE merchants'
         end
         it 'removes all records from the table' do
           action = Action.new(model: Merchant, type: :truncate)

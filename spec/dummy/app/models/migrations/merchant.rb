@@ -97,23 +97,6 @@ module Migrations
             '`vendor_address`.last_updated_date as t1',
             '`vendor_address`.last_updated_date as t2'))
 
-=begin
-              #from #{@legacy_database}.#{legacy_table} #{legacy_table}
-              #  join #{@database}.#{link_table.pluralize} #{link_table}
-              #    on #{link_table}.legacy_id = #{legacy_table}.vendor_id
-              #  join #{@database}.regional_merchants
-              #    on #{link_table}.id = #{@database}.regional_merchants.merchant_id
-              #where addr_type = 1
-
-        sql_string = "
-            select vendor_address.vendor_addr_id, merchant.id, IF(vendor_address.active = '1', 4, 1),
-              #{legacy_table}.phone, #{legacy_table}.zipcode, vendor_code,
-              IF(#{legacy_table}.latitude is not null && #{legacy_table}.latitude != '' && #{legacy_table}.latitude != 'Singapore', CAST(#{legacy_table}.latitude AS DECIMAL(10,7)), NULL),
-              IF(#{legacy_table}.longitude is not null && #{legacy_table}.longitude != '' && #{legacy_table}.longitude != 'Singapore', CAST(#{legacy_table}.longitude AS DECIMAL(10,7)), NULL),
-              #{@database}.regional_merchants.region_id,
-              #{legacy_table}.last_updated_date, #{legacy_table}.last_updated_date
-        "
-=end
       end
 
       def xyz
@@ -123,41 +106,6 @@ module Migrations
                          .set('c = d')
                          #.legacy_tables(self.legacy_tables)
       end
-=begin
-      desc "Migrate vendor addresses to merchant locations"
-      task :vendor_addresses => [:initialize, :vendor] do
-        table = "location"
-        legacy_table = "vendor_address"
-        legacy_table_primary_key = "vendor_addr_id"
-        link_table = "merchant"
-        STDOUT.puts "#{Time.now} - Migrating from #{@legacy_database}.#{legacy_table} to #{@database}.#{table.pluralize};"
-        ActiveRecord::Base.connection.execute("delete from #{@database}.#{table.pluralize};") if @reset
-
-        sql_string = "
-          insert into #{@database}.#{table.pluralize}
-            (legacy_id, merchant_id, state,
-              phone, postal_code, code,
-              latitude,
-              longitude,
-              region_id,
-              created_at, updated_at
-            )
-            select vendor_address.vendor_addr_id, merchant.id, IF(vendor_address.active = '1', 4, 1),
-              #{legacy_table}.phone, #{legacy_table}.zipcode, vendor_code,
-              IF(#{legacy_table}.latitude is not null && #{legacy_table}.latitude != '' && #{legacy_table}.latitude != 'Singapore', CAST(#{legacy_table}.latitude AS DECIMAL(10,7)), NULL),
-              IF(#{legacy_table}.longitude is not null && #{legacy_table}.longitude != '' && #{legacy_table}.longitude != 'Singapore', CAST(#{legacy_table}.longitude AS DECIMAL(10,7)), NULL),
-              #{@database}.regional_merchants.region_id,
-              #{legacy_table}.last_updated_date, #{legacy_table}.last_updated_date
-              from #{@legacy_database}.#{legacy_table} #{legacy_table}
-                join #{@database}.#{link_table.pluralize} #{link_table}
-                  on #{link_table}.legacy_id = #{legacy_table}.vendor_id
-                join #{@database}.regional_merchants
-                  on #{link_table}.id = #{@database}.regional_merchants.merchant_id
-              where addr_type = 1
-        "
-        STDOUT.puts sql_string if @debug
-        ActiveRecord::Base.connection.execute(sql_string)
-=end
 
     end
 

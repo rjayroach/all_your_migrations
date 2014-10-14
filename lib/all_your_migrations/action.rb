@@ -6,13 +6,14 @@ module AllYourMigrations
       #method(__method__).parameters.map { |arg| send eval("@#{arg[1]}").to_sym, eval(arg[1].to_s) }
       @model = model
       @type = type
-      @key = model.migration_options.key
-      @legacy_tables = model.migration_options.legacy_tables # work-around, should be just legacy_tables
+      @key = model.migration_options.key if model
+      @legacy_tables = model.migration_options.legacy_tables if model # work-around, should be just legacy_tables
       @values = []
       @from = nil
       @where = nil
       @set = []
       @sql = nil
+      @proc_object = nil
       #self.name = caller_locations(2,1)[0].label.to_sym
       self
     end
@@ -53,11 +54,17 @@ module AllYourMigrations
       self
     end
 
+    def proc_object(proc_object)
+      @proc_object = proc_object
+      self
+    end
+
     def to_sql
       @sql || build_sql
     end
 
     def execute!
+      @proc_object.call and return if @type.eql? :proc
       ActiveRecord::Base.connection.execute(to_sql)
     end
 
@@ -65,6 +72,7 @@ module AllYourMigrations
     private
 
     def build_sql
+      return 'proc' if @type.eql? :proc
       return sql_base_string if @legacy_tables.nil? or @legacy_tables.empty?
       @legacy_tables.inject(sql_base_string) do |query_string, table|
         query_string.gsub("`#{table.table_name}`", "#{table.database}.#{table.table_name}")

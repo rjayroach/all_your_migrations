@@ -10,14 +10,19 @@ module AllYourMigrations
       self.after = after
     end
 
-    def to_sql(invoke: :to_sql)
-      actions.inject([]) do |result, action|
+    def action_stack
+      actions.inject([]) do |stack, action|
         if @model.respond_to?(action)
-          result.append @model.send(action).send(invoke)
+          stack.append action
         elsif not action.eql? self.name # prevent endless recursion
-          @model.migrations(action).each {|m| m.execute(invoke: invoke)}
+          @model.migrations(action).each {|m| stack.concat m.action_stack }
         end
+        stack
       end
+    end
+
+    def to_sql(invoke: :to_sql)
+      action_stack.each {|action| @model.send(action).send(invoke)}
     end
 
     def run!

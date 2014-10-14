@@ -11,6 +11,10 @@ module AllYourMigrations
     # helper actions: find_in_column_type
     # object: last_migrated, first_migrated (maybe - this would be the first object migrated in this batch)
     module ClassMethods
+      def current_time(field)
+        "'#{Time.now.in_time_zone('UTC').to_s(:db)}' as #{field}"
+      end
+
       def migrate_option_key=(key)
         raise(ArgumentError, ":key must be a valid column") unless self.columns_hash.keys.include? key.to_s
         migration_options.key = key.to_sym
@@ -23,6 +27,14 @@ module AllYourMigrations
 
       def migration_options
         @migration_options ||= MigrationOptions.new
+      end
+
+      def run_code(proc_object)
+        new_action(nil, :proc).proc_object(proc_object)
+      end
+
+      def run_sql
+        new_action(nil, :sql) #.sql(sql)
       end
 
       def insert_into(model)
@@ -42,6 +54,7 @@ module AllYourMigrations
       end
 
       def belongs_to_migration(name, actions: [], before: nil, after: nil)
+        raise(ArgumentError, ":name must be unique") unless migrations(name).empty? # only one migration name per model
         migrations.append Migration.new(self, name: name, actions: [actions].flatten, before: before, after: after)
       end
 

@@ -89,13 +89,13 @@ module Migrations
             'merchants.id',
             "IF(`vendor_address`.active = '1', 4, 1)",
             '`vendor_address`.phone',
-            '`vendor_address`.zip_code',
+            '`vendor_address`.zipcode',
             'vendor_code',
             "IF(`vendor_address`.latitude is not null && `vendor_address`.latitude != '' && `vendor_address`.latitude != 'Singapore', CAST(`vendor_address`.latitude AS DECIMAL(10,7)), NULL)",
             "IF(`vendor_address`.longitude is not null && `vendor_address`.longitude != '' && `vendor_address`.longitude != 'Singapore', CAST(`vendor_address`.longitude AS DECIMAL(10,7)), NULL)",
             'regional_merchants.region_id',
-            '`vendor_address`.last_updated_date',
-            '`vendor_address`.last_updated_date'))
+            '`vendor_address`.last_updated_date as t1',
+            '`vendor_address`.last_updated_date as t2'))
 
 =begin
               #from #{@legacy_database}.#{legacy_table} #{legacy_table}

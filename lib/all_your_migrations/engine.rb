@@ -9,12 +9,16 @@ module AllYourMigrations
         else
           []
         end
-      #STDOUT.puts '$' * 50
-      #STDOUT.puts Rails.application.config.all_your_migrations_legacy_namespace
-      #STDOUT.puts Rails.application.config.autoload_paths
-      #STDOUT.puts  Rails.application.config.respond_to? :all_your_migrations_legacy_namespace 
-      #STDOUT.puts Rails.application.config.all_your_migrations_legacy_tables
-      #STDOUT.puts '$' * 50
+      Rails.logger.debug {
+        if Rails.application.config.respond_to?(:all_your_migrations_legacy_namespace)
+          log_string = "AYM: Set namespace to #{Rails.application.config.all_your_migrations_legacy_namespace}" +
+            "\nAYM: Rails autoload_paths: #{ Rails.application.config.autoload_paths}" +
+            "\nAYM: Legacy tables: #{Rails.application.config.all_your_migrations_legacy_tables}"
+        else
+          log_string = "AYM: all_your_migrations_legacy_tables NOT set"
+        end
+        log_string
+      }
     end
   end
 end

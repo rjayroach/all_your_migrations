@@ -11,8 +11,9 @@ module AllYourMigrations
     # helper actions: find_in_column_type
     # object: last_migrated, first_migrated (maybe - this would be the first object migrated in this batch)
     module ClassMethods
-      def current_time(field)
-        "'#{Time.now.in_time_zone('UTC').to_s(:db)}' as #{field}"
+      def current_time(field_name = nil)
+        field_name ||= time_field
+        "'#{Time.now.in_time_zone('UTC').to_s(:db)}' as #{field_name}"
       end
 
       def migrate_option_key=(key)
@@ -80,6 +81,13 @@ module AllYourMigrations
           self.where("#{k} like '%#{value}%'")
         end
       end
+
+      private
+      def time_field
+        @time_field ||= -1; @time_field += 1
+        "t#{@time_field}"
+      end
+
     end
 
     def self.included(base)

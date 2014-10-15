@@ -47,8 +47,8 @@ module Migrations
                                    .from(self.joins(:legacy)
                                              .select('merchants.id',
                                                      "case `vendor`.city_id when 6 then 2 else 1 end",
-                                                     current_time('t1'),
-                                                     current_time('t2')))
+                                                     current_time,
+                                                     current_time))
       end
 
       def truncate_regional_merchants
@@ -60,8 +60,8 @@ module Migrations
                                      .from(self.joins(:legacy)
                                                .select('merchants.id',
                                                        "case `vendor`.city_id when 1 then 1 when 6 then 3 when 4 then 2 when 3 then 5 when 2 then 4 else 1 end",
-                                                       current_time('t1'),
-                                                       current_time('t2')))
+                                                       current_time,
+                                                       current_time))
       end
 
 
@@ -115,9 +115,9 @@ module Migrations
       base.migrate_option_key = :legacy_id
       #base.migrate_option_legacy_tables = nil
       base.belongs_to_migration :nuke_and_bang, before: Merchant, after: Merchant,
-        actions: [:truncate, :truncate_client_merchants, :truncate_regional_merchants, :big_bang]
+        actions: [:truncate, :truncate_client_merchants, :truncate_regional_merchants, :truncate_locations, :big_bang]
       base.belongs_to_migration :big_bang, before: Merchant, after: Merchant,
-        actions: [:insert_new_merchants, :proper_case_names, :insert_client_merchants, :insert_regional_merchants]
+        actions: [:insert_new_merchants, :proper_case_names, :insert_client_merchants, :insert_regional_merchants, :insert_new_locations]
       base.belongs_to_migration :daily, before: Merchant, after: Merchant,
         actions: [:insert_new_merchants]
     end

@@ -22,7 +22,7 @@ module AllYourMigrations
     end
 
     def to_sql(invoke: :to_sql)
-      action_stack.each {|action| @model.send(action).send(invoke)}
+      action_stack.inject([]) {|acc, action| acc.append @model.send(action).send(invoke)}
     end
 
     def run!

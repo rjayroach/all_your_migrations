@@ -71,8 +71,9 @@ module AllYourMigrations
 
       def migrate
         @last_migrated_id = last_migrated_id
-        yield
+        output = yield
         @last_migrated_id = nil
+        output
       end
 
       # todo clean this up

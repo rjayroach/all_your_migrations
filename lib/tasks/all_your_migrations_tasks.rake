@@ -19,8 +19,8 @@ namespace :aym do
       # todo implement before and after in the Object and leverage it here
       model.migrations(@migration).each do |migration|
         STDOUT.puts "\n-- #{Time.now} begin #{model.table_name} #{migration.name}" if @debug
-        migration.to_sql.each {|sql| STDOUT.puts "#{sql}\n\n" } if @debug
-        migration.run! unless @dry_run
+        actions_sql = @dry_run ? migration.to_sql : migration.run!
+        actions_sql.each {|sql| STDOUT.puts "#{sql}\n\n" } if @debug
         STDOUT.puts "-- #{Time.now} finished\n\n" if @debug
       end
     end

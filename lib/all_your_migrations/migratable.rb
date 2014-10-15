@@ -11,8 +11,7 @@ module AllYourMigrations
     # helper actions: find_in_column_type
     # object: last_migrated, first_migrated (maybe - this would be the first object migrated in this batch)
     module ClassMethods
-      def current_time(field_name = nil)
-        field_name ||= time_field
+      def current_time(field_name = time_field)
         "'#{Time.now.in_time_zone('UTC').to_s(:db)}' as #{field_name}"
       end
 
@@ -87,8 +86,8 @@ module AllYourMigrations
 
       private
       def time_field
-        @time_field ||= -1; @time_field += 1
-        "t#{@time_field}"
+        @time_field ||= -1
+        "t#{@time_field += 1}"
       end
 
       def new_action(model, type)

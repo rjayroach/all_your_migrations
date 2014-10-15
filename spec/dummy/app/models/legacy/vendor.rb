@@ -1,4 +1,5 @@
 
+require_relative 'vendor_address'
 module Legacy
   class Vendor < ActiveRecord::Base
     establish_connection :legacy
@@ -6,7 +7,7 @@ module Legacy
     self.primary_key = "vendor_id"
     #belongs_to :city
     ## has_many :coupons, dependent: :destroy
-    #has_many :vendor_addresses
+    has_many :vendor_addresses
     #has_many :coupons
     #has_many :punches
     #has_many :person_cards

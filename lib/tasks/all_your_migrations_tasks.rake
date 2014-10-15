@@ -7,7 +7,6 @@ namespace :aym do
   task :initialize => [:environment] do
     @debug = to_boolean(ENV['debug'], false)
     @dry_run = to_boolean(ENV['dry_run'], false)
-    #@reset = to_boolean(ENV['reset'], false)
     @migration = ENV['migration'].try(:to_sym)
   end
 

@@ -117,7 +117,7 @@ module Migrations
       base.belongs_to_migration :nuke_and_bang, before: Merchant, after: Merchant,
         actions: [:truncate, :truncate_client_merchants, :truncate_regional_merchants, :truncate_locations, :big_bang]
       base.belongs_to_migration :big_bang, before: Merchant, after: Merchant,
-        actions: [:insert_new_merchants, :proper_case_names, :insert_client_merchants, :insert_regional_merchants] #, :insert_new_locations]
+        actions: [:insert_new_merchants, :proper_case_names, :insert_client_merchants, :insert_regional_merchants, :insert_new_locations]
       base.belongs_to_migration :daily, before: Merchant, after: Merchant,
         actions: [:insert_new_merchants, :proper_case_names]
     end

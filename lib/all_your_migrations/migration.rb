@@ -26,7 +26,9 @@ module AllYourMigrations
     end
 
     def run!
-      to_sql(invoke: :execute!)
+      @model.migrate do
+        to_sql(invoke: :execute!)
+      end
     end
 
   end

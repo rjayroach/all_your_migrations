@@ -50,10 +50,6 @@ module AllYourMigrations
         new_action(model, :truncate)
       end
 
-      def new_action(model, type)
-        Action.new(model: model, type: type)
-      end
-
       def belongs_to_migration(name, actions: [], before: nil, after: nil)
         raise(ArgumentError, ":name must be unique") unless migrations(name).empty? # only one migration name per model
         migrations.append Migration.new(self, name: name, actions: [actions].flatten, before: before, after: after)
@@ -68,9 +64,16 @@ module AllYourMigrations
         self.where("#{migration_options.key.to_s} is not null").order(migration_options.key)
       end
 
-      def last_migrated_id
+      def last_migrated_id(id = nil)
         return nil if migration_options.key.nil?
-        migrated.last.try(migration_options.key) || 0
+        @last_migrated_id = id if id
+        @last_migrated_id || migrated.last.try(migration_options.key) || 0
+      end
+
+      def migrate
+        @last_migrated_id = last_migrated_id
+        yield
+        @last_migrated_id = nil
       end
 
       # todo clean this up
@@ -86,6 +89,10 @@ module AllYourMigrations
       def time_field
         @time_field ||= -1; @time_field += 1
         "t#{@time_field}"
+      end
+
+      def new_action(model, type)
+        Action.new(model: model, type: type)
       end
 
     end

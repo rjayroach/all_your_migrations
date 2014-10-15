@@ -14,7 +14,7 @@ namespace :aym do
   desc 'Run a legacy AYM migration'
   task :run => [:initialize] do
     next unless @migration
-    Merchant.first # todo this is a problem
+    Merchant.first # todo this needs to be loaded or next line returns []; this is a problem
     ActiveRecord::Base.descendants.select {|model| model.respond_to? :migrations}.each do |model|
       # todo implement before and after in the Object and leverage it here
       model.migrations(@migration).each do |migration|

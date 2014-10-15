@@ -66,6 +66,7 @@ module AllYourMigrations
     def execute!
       @proc_object.call and return if @type.eql? :proc
       ActiveRecord::Base.connection.execute(to_sql)
+      @model.last_migrated_id(0) if @model and @type.eql? :truncate
     end
 
 

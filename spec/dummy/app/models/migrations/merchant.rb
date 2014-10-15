@@ -32,9 +32,7 @@ module Migrations
 
       def proper_case_names
         run_code(
-          # todo last_migrated_id needs to be stored per migration so it is stable between actions
-          #Proc.new {where('legacy_id > ?', last_migrated_id).each {|m| m.update_attributes(name: m.name.titleize)}}
-          Proc.new {all.each {|m| m.update_attributes(name: m.name.titleize)}}
+          Proc.new {where('legacy_id > ?', last_migrated_id).each {|m| m.update_attributes(name: m.name.titleize)}}
         )
       end
 
@@ -45,6 +43,7 @@ module Migrations
       def insert_client_merchants
         insert_into(ClientMerchant).values(:merchant_id, :client_id, :created_at, :updated_at)
                                    .from(self.joins(:legacy)
+                                             .where('`vendor`.vendor_id > ?', last_migrated_id)
                                              .select('merchants.id',
                                                      "case `vendor`.city_id when 6 then 2 else 1 end",
                                                      current_time,
@@ -58,6 +57,7 @@ module Migrations
       def insert_regional_merchants
         insert_into(RegionalMerchant).values(:merchant_id, :region_id, :created_at, :updated_at)
                                      .from(self.joins(:legacy)
+                                               .where('`vendor`.vendor_id > ?', last_migrated_id)
                                                .select('merchants.id',
                                                        "case `vendor`.city_id when 1 then 1 when 6 then 3 when 4 then 2 when 3 then 5 when 2 then 4 else 1 end",
                                                        current_time,
@@ -117,9 +117,9 @@ module Migrations
       base.belongs_to_migration :nuke_and_bang, before: Merchant, after: Merchant,
         actions: [:truncate, :truncate_client_merchants, :truncate_regional_merchants, :truncate_locations, :big_bang]
       base.belongs_to_migration :big_bang, before: Merchant, after: Merchant,
-        actions: [:insert_new_merchants, :proper_case_names, :insert_client_merchants, :insert_regional_merchants, :insert_new_locations]
+        actions: [:insert_new_merchants, :proper_case_names, :insert_client_merchants, :insert_regional_merchants] #, :insert_new_locations]
       base.belongs_to_migration :daily, before: Merchant, after: Merchant,
-        actions: [:insert_new_merchants]
+        actions: [:insert_new_merchants, :proper_case_names]
     end
   end
 end

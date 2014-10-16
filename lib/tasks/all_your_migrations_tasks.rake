@@ -1,4 +1,3 @@
-
 def to_boolean(str, default = false)
   str.nil? ? default : str.eql?('true')
 end
@@ -25,4 +24,3 @@ namespace :aym do
     end
   end
 end
-

@@ -2,38 +2,22 @@ module AllYourMigrations
   module Migratable
     extend ActiveSupport::Concern
 
-    # inherited settings: legacy_tables
-    # chained settings: insert_into, update_into
-    # action settings: on_migrate [], link_by :legacy_id (link_by used to be last_migrated_id_column), also support legacy_tables([])
-    # remove ignore_legacy_tables; if the migration should ignore them just add a .legacy_tables(nil) to the insert_into / update_into chain
-    # note: link_by and ignore_legacy_tables can both be set on each individual query as well
-    # actions: truncate, truncate!, migrate, migrate! (the non-destructive versions return the SQL string that would have run)
-    # helper actions: find_in_column_type
-    # object: last_migrated, first_migrated (maybe - this would be the first object migrated in this batch)
     module ClassMethods
       def current_time(field_name = time_field)
         "'#{Time.now.in_time_zone('UTC').to_s(:db)}' as #{field_name}"
       end
 
-      def migrate_option_key=(key)
-        raise(ArgumentError, ":key must be a valid column") unless self.columns_hash.keys.include? key.to_s
-        migration_options.key = key.to_sym
-      end
-      
-      def migrate_option_legacy_tables=(legacy_tables)
-        raise(ArgumentError, ":legacy_tables must be an Array") unless legacy_tables.class.eql? Array
-        migration_options.legacy_tables = legacy_tables
-      end
-
-      def migration_options
-        @migration_options ||= MigrationOptions.new
+      def migration_options(options = nil)
+        raise(ArgumentError, ":options must be a Hash") if options and not options.class.eql? Hash
+        @migration_options = options if options
+        Rails.application.config.migration_options.merge(@migration_options || {})
       end
 
       def run_code(proc_object)
         new_action(nil, :proc).proc_object(proc_object)
       end
 
-      def run_sql
+      def run_sql # NOTE This hasn't been fully tested
         new_action(nil, :sql) #.sql(sql)
       end
 
@@ -49,9 +33,9 @@ module AllYourMigrations
         new_action(model, :truncate)
       end
 
-      def belongs_to_migration(name, actions: [], before: nil, after: nil)
+      def belongs_to_migration(name, actions: [], **migration_options)
         raise(ArgumentError, ":name must be unique") unless migrations(name).empty? # only one migration name per model
-        migrations.append Migration.new(self, name: name, actions: [actions].flatten, before: before, after: after)
+        migrations.append Migration.new(self, name: name, actions: [actions].flatten, migration_options: migration_options)
       end
 
       def migrations(query_type = :all)
@@ -60,13 +44,13 @@ module AllYourMigrations
       end
 
       def migrated
-        self.where("#{migration_options.key.to_s} is not null").order(migration_options.key)
+        self.where("#{migration_options[:primary_key].to_s} is not null").order(migration_options[:primary_key])
       end
 
       def last_migrated_id(id = nil)
-        return nil if migration_options.key.nil?
+        return nil if migration_options[:primary_key].nil?
         @last_migrated_id = id if id
-        @last_migrated_id || migrated.last.try(migration_options.key) || 0
+        @last_migrated_id || migrated.last.try(migration_options[:primary_key]) || 0
       end
 
       def migrate
@@ -102,4 +86,3 @@ module AllYourMigrations
     end
   end
 end
-

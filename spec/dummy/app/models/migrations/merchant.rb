@@ -26,8 +26,8 @@ module Migrations
                                                      "'perx_stamp.png'",
                                                      :uses_amex,
                                                      :amex_issuer_id))
-                         #.key_on(:legacy_id)
-                         #.legacy_tables([:hi]) #self.legacy_tables)
+                         #.primary_key(:legacy_id)
+                         #.legacy_tables(nil)
       end
 
       def proper_case_names
@@ -112,14 +112,12 @@ module Migrations
     def self.included(base)
       base.extend(ClassMethods)
       base.belongs_to :legacy, class_name: 'Legacy::Vendor'
-      base.migrate_option_key = :legacy_id
-      #base.migrate_option_legacy_tables = nil
-      base.belongs_to_migration :nuke_and_bang, before: Merchant, after: Merchant,
-        actions: [:truncate, :truncate_client_merchants, :truncate_regional_merchants, :truncate_locations, :big_bang]
-      base.belongs_to_migration :big_bang, before: Merchant, after: Merchant,
+      base.migration_options run_after: Merchant # Survey # primary_key: :id, legacy_tables: nil
+      base.belongs_to_migration :nuke, actions: [:truncate, :truncate_client_merchants, :truncate_regional_merchants, :truncate_locations]
+      base.belongs_to_migration :big_bang, #run_after: Survey, primary_key: :legacy_id, legacy_tables: nil,
         actions: [:insert_new_merchants, :proper_case_names, :insert_client_merchants, :insert_regional_merchants, :insert_new_locations]
-      base.belongs_to_migration :daily, before: Merchant, after: Merchant,
-        actions: [:insert_new_merchants, :proper_case_names]
+      base.belongs_to_migration :nuke_and_bang, actions: [:nuke, :big_bang]
+      base.belongs_to_migration :daily, actions: [:insert_new_merchants, :proper_case_names]
     end
   end
 end

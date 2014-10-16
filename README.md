@@ -43,6 +43,19 @@ Or install it yourself as:
 
 ## Usage
 
+Settings
+NOTE: AYM migration_options can be set at the global, model and/or migration (NOT action) levels; The more specific setting takes precedence
+NOTE: primary_key and legacy_tables can be set globally; run_after only makes sense at model level and below
+
+```ruby
+{:namespaces=>[Legacy], :primary_key=>:legacy_id, :legacy_tables=>nil, :run_after=>Migrations::Merchant}
+
+Likely to set at Application level: namespaces, primary_key (legacy_tables is set automagically from namespaces value)
+Likely to be set at model level: primary_key, legacy_tables, run_after
+Likely to be set at migration level: primary_key, legacy_tables, run_after
+Likely to be set at action level: primary_key, legacy_tables
+
+```
 
 
 ### Additional Steps for a Legacy Database
@@ -54,7 +67,9 @@ config.eager_load = true
 
 config/application.rb:
 ```ruby
-config.all_your_migrations_legacy_namespace = Legacy
+config.to_prepare do
+  Rails.application.config.migration_options = {namespaces: Legacy, primary_key: :legacy_id}
+end
 ```
 
 #### Configure access to the legacy database

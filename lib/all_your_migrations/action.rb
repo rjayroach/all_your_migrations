@@ -4,18 +4,27 @@ module AllYourMigrations
 
     def initialize(model: nil, type: nil)
       #method(__method__).parameters.map { |arg| send eval("@#{arg[1]}").to_sym, eval(arg[1].to_s) }
+      #self.name = caller_locations(2,1)[0].label.to_sym
       @model = model
       @type = type
-      @key = model.migration_options.key if model
-      @legacy_tables = model.migration_options.legacy_tables if model # work-around, should be just legacy_tables
       @values = []
       @from = nil
       @where = nil
       @set = []
       @sql = nil
       @proc_object = nil
-      #self.name = caller_locations(2,1)[0].label.to_sym
+      @migration_options = {}
       self
+    end
+
+    def migration_options(options = nil)
+      raise(ArgumentError, ":options must be a Hash") if options and not options.class.eql? Hash
+      @migration_options = options if options
+      if @model
+        @model.migration_options.merge(@migration_options || {})
+      else
+        @migration_options
+      end
     end
 
     def values(*columns)
@@ -38,14 +47,16 @@ module AllYourMigrations
       self
     end
 
-    def key(key)
-      @key = key
+    def primary_key(key)
+      raise(ArgumentError, ":primary_key must be set on a model") unless @model
+      raise(ArgumentError, "column not found #{key} on #{@model.table_name} :primary_key must be a valid column") unless @model.columns_hash.keys.include? key.to_s
+      @migration_options[:primary_key] = key
       self
     end
 
     def legacy_tables(tables)
-      raise(ArgumentError, ":tables must be an Array") unless tables.class.eql? Array
-      @legacy_tables = tables
+      raise(ArgumentError, ":tables must be an Array") if tables and not tables.class.eql? Array
+      @migration_options[:legacy_tables] = tables
       self
     end
 
@@ -60,10 +71,17 @@ module AllYourMigrations
     end
 
     def to_sql
-      @sql || build_sql
+      raise(ArgumentError, ":to_sql requires a model to be set") unless @model
+      # todo would be nicer to have the last_legacy_id and other functions actually delegate to the action, rather than overwriting the model
+      em = @model.migration_options
+      @model.migration_options(migration_options) # swap options from Action into model to generate SQL
+      return_sql = @sql || build_sql
+      @model.migration_options(em)
+      return_sql
     end
 
     def execute!
+      # todo make sure call has model options set
       @proc_object.call and return if @type.eql? :proc
       @model.last_migrated_id(0) if @model and @type.eql? :truncate
       sql_string = to_sql
@@ -76,8 +94,8 @@ module AllYourMigrations
 
     def build_sql
       return 'proc' if @type.eql? :proc
-      return sql_base_string if @legacy_tables.nil? or @legacy_tables.empty?
-      @legacy_tables.inject(sql_base_string) do |query_string, table|
+      return sql_base_string if migration_options[:legacy_tables].nil?
+      migration_options[:legacy_tables].inject(sql_base_string) do |query_string, table|
         query_string.gsub("`#{table.table_name}`", "#{table.database}.#{table.table_name}")
       end
     end

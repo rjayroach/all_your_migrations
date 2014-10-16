@@ -17,7 +17,10 @@ module Dummy
     config.to_prepare do
       require File.expand_path('../../app/models/legacy/vendor', __FILE__)
       #require File.expand_path('../../app/models/merchant', __FILE__)
-      Rails.application.config.all_your_migrations_legacy_namespace = Legacy
+      # Note Legacy namespace isn't available until to_prepare
+      unless Rails.application.config.respond_to? :migration_options  # only set it if it hasn't already been set
+        Rails.application.config.migration_options = {namespaces: Legacy, primary_key: :legacy_id}
+      end
     end
     # Settings in config/environments/* take precedence over those specified here.
     # Application configuration should go into files in config/initializers

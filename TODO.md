@@ -5,29 +5,30 @@
 1. builds an array in order so it gets done
 2. Global.migrate! <-- calls through the array in order of priority and does it
 
+### Make sure action migration_options are set on model before a proc and @sql are run
+Or just get migratable methods last_legacy_id and 
+Also notice that settings are inherited app->model->migration->action; Right now it is model->action
+When an action is being run inside the context of a migration it should inherit from the migration, not the model
+
 ### Figure out problem loading models in the default namespace for processing migrations
 See rake task for this
 Also about legacy models not completely loaded (see require_relative in legacy/vendor.rb model)
-
-### test that change the key is working per action
-Is this really necessary per _action_?
-may be appropriate per model. There was a requirement for this somewhere in migrations
-
+also see spec/dummy/config/application.rb
 
 ## Should
 
-### migrate! method has ability to remove and rebuild indexes after migration has run
+### move any @instance references into getters and don't pollute the code by accessing @vars everywhere
 
-### config initializer for migrations: (FIX)
-if set legacy_database and table names then apply them to all migrations automatically. can be overriden by the table with a += %w(table)
-get the basic code working in a manner normal for Rails
+### migrate! method has ability to remove and rebuild indexes after migration has run
+Pull this out of the existing rake file, but it needs to be dynamic in that it reads the index files, removes and rebuilds them auto-magically
+It should also be able to preserve certain indexes as necessary
+Nice to have is to be able to build tempoarary indexes for the migration itself (to increase performance of migration)
+
 
 ### Have model.migrations(:name) return a single migration rather than an array
 
 
 ## Could
-### support multiple namespaces for listng models in a specific namespace, e.g. Legacy
-change to array
 
 ### only require activesupport/concerns
 
